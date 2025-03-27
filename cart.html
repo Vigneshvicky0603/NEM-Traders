@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Cart - NEM Traders</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    button {
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+    .fade-in {
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="font-sans bg-gray-100 text-gray-800">
+
+<!-- HEADER -->
+<header class="bg-yellow-400 text-gray-800 py-8">
+  <div class="container mx-auto text-center">
+    <h1 class="text-4xl font-bold">Your Cart</h1>
+  </div>
+</header>
+
+<!-- CART SECTION -->
+<section class="py-16 bg-white">
+  <div class="container mx-auto">
+    <h2 class="text-3xl font-bold mb-4">Cart Items</h2>
+    
+    <!-- Cart Items -->
+    <div id="cart-items" class="space-y-4 overflow-x-auto"></div>
+
+    <!-- Total Amount -->
+    <p class="text-lg font-semibold mt-4">
+      Total: ₹<span id="cart-total">0.00</span>
+    </p>
+
+    <!-- Checkout and Clear Buttons -->
+    <div class="mt-6">
+      <button id="checkout-btn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500 transition" disabled>
+        Checkout
+      </button>
+      <button onclick="clearCart()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-400 transition ml-4">
+        Clear Cart
+      </button>
+      <a href="index.html" class="ml-4 text-green-600 hover:underline">
+        ← Continue Shopping
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CHECKOUT MODAL -->
+<div id="checkout-modal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center hidden">
+  <div class="bg-white p-6 rounded-lg w-96">
+    <h3 class="text-xl font-semibold mb-4">Confirm Your Order</h3>
+    <p>Your total is ₹<span id="modal-total">0.00</span>. Proceed to checkout?</p>
+    <div class="mt-4 flex justify-end">
+      <button onclick="confirmCheckout()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500 transition">
+        Confirm
+      </button>
+      <button onclick="closeModal()" class="ml-2 text-gray-500 hover:text-gray-700">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="bg-gray-800 text-white py-4 mt-12">
+  <div class="container mx-auto text-center">
+    <p>&copy; 2025 NEM Traders. All Rights Reserved.</p>
+  </div>
+</footer>
+
+<!-- JAVASCRIPT -->
+<script>
+  // Load cart from localStorage
+  let cart = JSON.parse(localStorage.getItem('cart')) || [];
+
+  // Ensure price is float and quantity is integer
+  cart = cart.map(item => ({
+    ...item,
+    price: Number(item.price) || 0,
+    quantity: Math.max(parseInt(item.quantity) || 1, 1)
+  }));
+
+  // Function to update the cart display
+  function updateCart() {
+    const cartItems = document.getElementById('cart-items');
+    const cartTotal = document.getElementById('cart-total');
+
+    let total = 0;
+    cartItems.innerHTML = '';
+
+    if (cart.length === 0) {
+      cartItems.innerHTML = '<p class="text-gray-500">Your cart is empty!</p>';
+    } else {
+      cartItems.innerHTML = cart.map((item, index) => {
+        // Fix floating-point issues
+        const price = Number(item.price);
+        const quantity = Math.max(1, parseInt(item.quantity) || 1);
+        const itemTotal = price * quantity;
+
+        total += itemTotal;
+
+        return `
+          <div class="flex justify-between items-center border-b py-2 fade-in">
+            <div>
+              <a href="index5.html#products" class="font-medium text-green-600 hover:underline">
+                ${item.name}
+              </a> x
+              <button onclick="changeQuantity(${index}, -1)" class="text-red-500 px-2">−</button>
+              <span>${quantity}</span>
+              <button onclick="changeQuantity(${index}, 1)" class="text-green-500 px-2">+</button> - 
+              <span class="text-green-600 font-semibold">₹${itemTotal.toFixed(2)}</span>
+            </div>
+            <button onclick="removeFromCart(${index})" class="text-red-500 hover:text-red-700">
+              Remove
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Update total and checkout button state
+    cartTotal.textContent = total.toFixed(2);
+    document.getElementById('checkout-btn').disabled = cart.length === 0;
+  }
+
+  function changeQuantity(index, change) {
+    cart[index].quantity += change;
+    if (cart[index].quantity <= 0) {
+      removeFromCart(index);
+    } else {
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+  }
+
+  function removeFromCart(index) {
+    if (confirm('Are you sure you want to remove this item?')) {
+      cart.splice(index, 1);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+  }
+
+  function openCheckoutModal() {
+    if (cart.length === 0) {
+      alert('Your cart is empty!');
+      return;
+    }
+    document.getElementById('modal-total').textContent = cart.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2);
+    document.getElementById('checkout-modal').classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('checkout-modal').classList.add('hidden');
+  }
+
+  function confirmCheckout() {
+    // Generate a random Order ID
+    const orderId = "NEM" + Math.floor(Math.random() * 1000000);
+
+    // Save Order Details
+    localStorage.setItem("orderSuccess", "Thank you! Your order has been placed.");
+    localStorage.setItem("orderId", orderId);
+
+    // Clear cart
+    cart = [];
+    localStorage.setItem('cart', JSON.stringify(cart));
+
+    // Redirect to Order Confirmation Page
+    window.location.href = "order-confirmation.html";
+  }
+
+  function clearCart() {
+    if (confirm('Are you sure you want to empty the cart?')) {
+      cart = [];
+      localStorage.setItem('cart', JSON.stringify(cart));
+      updateCart();
+    }
+  }
+
+  // Load cart data on page load
+  window.onload = updateCart;
+
+  // Bind checkout button to modal
+  document.getElementById('checkout-btn').addEventListener('click', openCheckoutModal);
+</script>
+
+</body>
+</html>
